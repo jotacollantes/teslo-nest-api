@@ -12,8 +12,9 @@
 ```
 docker-compose up -d
 ```
-6. Cargar Seed
+6. Levantar: ```yarn start:dev```
+
+7. Cargar Seed
 ````
 http://localhost:3000/api/seed
 ````
-7. Levantar: ```yarn start:dev```

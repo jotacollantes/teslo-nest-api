@@ -7,13 +7,14 @@ import { SeedModule } from './seed/seed.module';
 import { FilesModule } from './files/files.module';
 import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   
   imports: [
     //* 1. Configuracion de las variables de entorno con ConfigModule
     ConfigModule.forRoot(),
-    //* 2. Configuracion del modulo TYPEORM
+    //* 2. Configuracion del modulo TYPEORM for Root
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -33,7 +34,8 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     ProductsModule,
     CommonModule,
     SeedModule,
-    FilesModule
+    FilesModule,
+    AuthModule
   ],
 
   

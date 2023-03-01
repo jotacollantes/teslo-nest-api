@@ -6,12 +6,14 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import {validate as isUUID} from 'uuid'
 import { Product,ProductImage } from './entities';
+import { handlerErrors } from 'src/helpers';
+import { User } from '../auth/entities/user.entity';
 
 @Injectable()
 export class ProductsService {
 
 //*Creamos una instancia de logger para manejar la visualizacion de los logs. Le especificamos el modulo ProductService
-private readonly logger = new Logger('ProductsService')
+// private readonly logger = new Logger('ProductsService')
 
 
   constructor(
@@ -30,7 +32,7 @@ private readonly logger = new Logger('ProductsService')
   {
     
   }
-  async create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto,user:User) {
     //return 'This action adds a new product';
     try {
       
@@ -43,7 +45,9 @@ private readonly logger = new Logger('ProductsService')
         //*Como la propiedad images esta definida como una referencia a la tabla productImage en la entity Product, va a recibir las imagenes que vienen en el dto. al mismo tiempo se van a grabar en entidad ProductImage
         images:images.map((img)=>{
           return this.productImageRepository.create({url:img})
-        })
+        }),
+        //*granamos el id del usuario
+        user:user
       });
 
       //*Luego lo grabamos en la base de datos. Este save graba tanto en productRepository y porductImageRepository
@@ -53,7 +57,7 @@ private readonly logger = new Logger('ProductsService')
       return {...product,images};
 
     } catch (error) {
-      this.handlerErrors(error)
+      handlerErrors(error,'ProductsService')
     }
 
   }
@@ -122,7 +126,9 @@ private readonly logger = new Logger('ProductsService')
     }
   }
 
-   async update(id: string, updateProductDto: UpdateProductDto) {
+   async update(id: string,
+    updateProductDto: UpdateProductDto,
+    user:User) {
     
     const {images=[],...detailsToUpdate}=updateProductDto
     //* El preload no carga los datos de las relaciones en este caso de las imagenes.
@@ -166,6 +172,8 @@ private readonly logger = new Logger('ProductsService')
         //* EL criterio de busqueda where tiene el formato {product:{id:id}} porque se hace referencia a un campo que es una relacion
         product.images=await this.productImageRepository.findBy({product:{id:id}})
       }
+      //*Incluimos el user que actualizo el producto
+      product.user=user
       await queryRunner.manager.save(product)
       await queryRunner.commitTransaction()
       await queryRunner.release()
@@ -177,7 +185,7 @@ private readonly logger = new Logger('ProductsService')
     } catch (error) {
       await queryRunner.rollbackTransaction()
       await queryRunner.release()
-      this.handlerErrors(error)
+      handlerErrors(error,'ProductsService')
     }
   }
 
@@ -193,7 +201,7 @@ private readonly logger = new Logger('ProductsService')
       await this.productRepository.remove(product)
       return `Product with id ${id} was deleted`
     } catch (error) {
-      this.handlerErrors(error)
+      handlerErrors(error,'ProductsService')
     }
 
     
@@ -206,17 +214,10 @@ private readonly logger = new Logger('ProductsService')
     try {
       return await query.delete().where({}).execute()
     } catch (error) {
-      this.handlerErrors(error)
+      handlerErrors(error,'AuthService')
     }
 
   }
 
-  private handlerErrors(error:any){
-    //console.log(error)
-      //* El codigo 23505 es el codigo de validaciones de constraints
-      if(error.code==='23505') throw new BadRequestException(error.detail)
-
-      this.logger.error(error)
-      throw new InternalServerErrorException('Unespected Error, check server logs')
-  }
+  
 }
